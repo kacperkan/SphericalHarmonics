@@ -1,10 +1,11 @@
-import os
-import numpy as np
-import matplotlib.pyplot as plt
-from matplotlib.colors import LinearSegmentedColormap
-import imageio.v3 as im
-import cv2  # resize images with float support
 import math
+import os
+
+import cv2  # resize images with float support
+import imageio.v3 as im
+import matplotlib.pyplot as plt
+import numpy as np
+from matplotlib.colors import LinearSegmentedColormap
 
 # Custom
 import spherical_harmonics as sh
