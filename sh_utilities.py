@@ -127,7 +127,7 @@ def find_windowing_factor(coeffs, max_laplacian=10.0):
         tableL[l_sh] = float(sqr(l_sh) * sqr(l_sh + 1))
         B = 0.0
         for m in range(-1, l_sh + 1):
-            B += np.mean(coeffs[utilities.sh_index(l_sh, m), :])
+            B += np.mean(coeffs[sh.sh_index(l_sh, m), :])
         tableB[l_sh] = B
 
     squared_laplacian = 0.0
@@ -177,7 +177,7 @@ def apply_windowing(coeffs, windowing_factor=None, verbose=False):
             1.0 + windowing_factor * l_sh * l_sh * (l_sh + 1.0) * (l_sh + 1.0)
         )
         for m in range(-l_sh, l_sh + 1):
-            coeffs[utilities.sh_index(l_sh, m), :] *= s
+            coeffs[sh.sh_index(l_sh, m), :] *= s
     return coeffs
 
 
@@ -271,7 +271,17 @@ def sh_reconstruct_diffuse_map(ibl_coeffs, width=600):
     return rendered_image.astype(np.float32)
 
 
-def write_reconstruction(c, l_max, fn="", width=600, output_dir="./output/"):
+def write_reconstruction(
+    c,
+    l_max,
+    fn="",
+    width=600,
+    output_dir="./output/",
+    apply_window: float = 0.0,
+):
+    if apply_window > 0.0:
+        print("Applying windowing to SH coefficients")
+        c = apply_windowing(c, windowing_factor=apply_window)
     reconstructed_signal = sh_reconstruct_signal(c, width=width)
     reconstructed_diffuse = sh_reconstruct_diffuse_map(c, width=width)
 

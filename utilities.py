@@ -1,5 +1,6 @@
 import os
 import time
+from pathlib import Path
 
 import cv2  # resize images with float support
 import imageio.v3 as im
@@ -157,12 +158,13 @@ def get_solid_angle_map(width):
 def get_roughness_map(
     ibl_name, width=600, width_low_res=32, output_width=None, roughness=1.0
 ):
+    plugin = "EXR-FI" if Path(ibl_name).suffix == ".exr" else "HDR-FI"
     if output_width is None:
         output_width = width
     height = int(width / 2)
     height_low_res = int(width_low_res / 2)
 
-    img = im.imread(ibl_name, plugin="EXR-FI")[:, :, 0:3]
+    img = im.imread(ibl_name, plugin=plugin)[:, :, 0:3]
     img = resize_image(img, width, height)
 
     uv_x = np.arange(float(width)) / width

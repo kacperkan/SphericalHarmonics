@@ -1,5 +1,6 @@
 import argparse
 import os
+from pathlib import Path
 
 import cv2  # For resizing images with float support
 import imageio.v3 as im
@@ -149,6 +150,12 @@ def parse_arguments():
         default=1000,
         help="Width to resize the image (default: 1000).",
     )
+    parser.add_argument(
+        "--apply_window",
+        type=float,
+        default=0.0,
+        help="Apply a window to SH coefficients with value (default: 0.0).",
+    )
     return parser.parse_args()
 
 
@@ -175,8 +182,9 @@ def main():
 
     # Read image
     print("Reading image...")
+    plugin = "EXR-FI" if Path(args.ibl_filename).suffix == ".exr" else "HDR-FI"
     radiance_map_data = utilities.resize_image(
-        im.imread(args.ibl_filename, plugin="EXR-FI")[:, :, :3],
+        im.imread(args.ibl_filename, plugin=plugin)[:, :, :3],
         args.resize_width,
         resize_height,
         cv2.INTER_CUBIC,
@@ -203,6 +211,7 @@ def main():
         "_SPH",
         width=args.resize_width,
         output_dir=args.output_dir,
+        apply_window=args.apply_window,
     )
     # sh_utilities.sh_print(ibl_coeffs)
     sh_utilities.sh_print_to_file(ibl_coeffs)
