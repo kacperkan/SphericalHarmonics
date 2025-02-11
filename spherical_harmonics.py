@@ -1,4 +1,6 @@
-'''
+import numpy as np
+
+"""
 MIT License
 
 Copyright (c) 2018 Andrew Chalmers
@@ -20,29 +22,28 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-'''
+"""
 
-'''
+"""
 Spherical harmonics for radiance maps using numpy
 
 Assumes:
 Equirectangular format
 theta: [0 to pi], from top to bottom row of pixels
 phi: [0 to 2*Pi], from left to right column of pixels
-'''
+"""
 
-import numpy as np
 
 # Spherical harmonics functions
-def P(l, m, x):
+def P(l_sh, m, x):
     """
     Computes the associated Legendre polynomial P(l, m, x).
-    
+
     Args:
         l (int): Band of the polynomial.
         m (int): Coefficient within band of the polynomial.
         x (ndarray): Input array.
-    
+
     Returns:
         ndarray: Values of the Legendre polynomial.
     """
@@ -54,16 +55,16 @@ def P(l, m, x):
             pmm *= (-fact) * somx2
             fact += 2.0
 
-    if l == m:
+    if l_sh == m:
         return pmm * np.ones(x.shape)
 
     pmmp1 = x * (2.0 * m + 1.0) * pmm
 
-    if l == m + 1:
+    if l_sh == m + 1:
         return pmmp1
 
     pll = np.zeros(x.shape)
-    for ll in range(m + 2, l + 1):
+    for ll in range(m + 2, l_sh + 1):
         pll = ((2.0 * ll - 1.0) * x * pmmp1 - (ll + m - 1.0) * pmm) / (ll - m)
         pmm = pmmp1
         pmmp1 = pll
@@ -78,7 +79,7 @@ def divfact(a, b):
     Args:
         a (int): Numerator value.
         b (int): Denominator value.
-    
+
     Returns:
         float: The factorial division result.
     """
@@ -98,48 +99,51 @@ def factorial(x):
 
     Args:
         x (int): Input integer.
-    
+
     Returns:
         float: Factorial of x.
     """
     return 1.0 if x == 0 else x * factorial(x - 1)
 
 
-def K(l, m):
+def K(l_sh, m):
     """
     Computes the normalization constant K(l, m).
 
     Args:
         l (int): Band.
         m (int): Coefficient within band.
-    
+
     Returns:
         float: Normalization constant.
     """
-    return np.sqrt(((2 * l + 1) * factorial(l - m)) / (4 * np.pi * factorial(l + m)))
+    return np.sqrt(
+        ((2 * l_sh + 1) * factorial(l_sh - m))
+        / (4 * np.pi * factorial(l_sh + m))
+    )
 
 
-def K_fast(l, m):
+def K_fast(l_sh, m):
     """
     Computes a fast approximation of the normalization constant K(l, m).
 
     Args:
         l (int): Band.
         m (int): Coefficient within band.
-    
+
     Returns:
         float: Approximation of the normalization constant.
     """
     cAM = abs(m)
     uVal = 1.0
-    k = l + cAM
-    while k > (l - cAM):
+    k = l_sh + cAM
+    while k > (l_sh - cAM):
         uVal *= k
         k -= 1
-    return np.sqrt((2.0 * l + 1.0) / (4 * np.pi * uVal))
+    return np.sqrt((2.0 * l_sh + 1.0) / (4 * np.pi * uVal))
 
 
-def sh(l, m, theta, phi):
+def sh(l_sh, m, theta, phi):
     """
     Computes the spherical harmonics function Y(l, m) for angles theta and phi.
 
@@ -148,18 +152,18 @@ def sh(l, m, theta, phi):
         m (int): Coefficient within band.
         theta (ndarray): Azimuth angle.
         phi (ndarray): Elevation angle.
-    
+
     Returns:
         ndarray: Spherical harmonics function value.
     """
     sqrt2 = np.sqrt(2.0)
     cos_theta = np.cos(theta)
     if m == 0:
-        return K(l, m) * P(l, m, cos_theta)
+        return K(l_sh, m) * P(l_sh, m, cos_theta)
     elif m > 0:
-        return sqrt2 * K(l, m) * np.cos(m * phi) * P(l, m, cos_theta)
+        return sqrt2 * K(l_sh, m) * np.cos(m * phi) * P(l_sh, m, cos_theta)
     else:
-        return sqrt2 * K(l, -m) * np.sin(-m * phi) * P(l, -m, cos_theta)
+        return sqrt2 * K(l_sh, -m) * np.sin(-m * phi) * P(l_sh, -m, cos_theta)
 
 
 def sh_terms(l_max):
@@ -168,25 +172,25 @@ def sh_terms(l_max):
 
     Args:
         l_max (int): Maximum bands.
-    
+
     Returns:
         int: Number of spherical harmonics terms.
     """
     return (l_max + 1) * (l_max + 1)
 
 
-def sh_index(l, m):
+def sh_index(l_sh, m):
     """
     Computes the index for accessing the (l, m) spherical harmonics term in a 1D array.
 
     Args:
         l (int): Band.
         m (int): Coefficient within band.
-    
+
     Returns:
         int: Index of the spherical harmonics term.
     """
-    return l * l + l + m
+    return l_sh * l_sh + l_sh + m
 
 
 def sh_evaluate(theta, phi, l_max):
@@ -197,15 +201,15 @@ def sh_evaluate(theta, phi, l_max):
         theta (ndarray): Azimuth angles.
         phi (ndarray): Elevation angles.
         l_max (int): Maximum bands for the spherical harmonics.
-    
+
     Returns:
         ndarray: Spherical harmonics coefficients matrix.
     """
     coeffs_matrix = np.zeros((theta.shape[0], phi.shape[0], sh_terms(l_max)))
 
-    for l in range(0, l_max + 1):
-        for m in range(-l, l + 1):
-            index = sh_index(l, m)
-            coeffs_matrix[:, :, index] = sh(l, m, theta, phi)
+    for l_sh in range(0, l_max + 1):
+        for m in range(-l_sh, l_sh + 1):
+            index = sh_index(l_sh, m)
+            coeffs_matrix[:, :, index] = sh(l_sh, m, theta, phi)
 
     return coeffs_matrix
